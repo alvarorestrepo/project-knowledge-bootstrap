@@ -6,11 +6,11 @@ description: >
 license: MIT
 metadata:
   author: user
-  version: "1.0"
+  version: "1.1.2"
   scope: [{{SCOPE}}]
   generated_by: project-knowledge-bootstrap
   generated_at: "{{ISO_DATE}}"
-  source_version: "1.0"
+  source_version: "1.1.2"
   auto_invoke:
     {{#AUTO_INVOKE}}
     - "{{ACTION}}"
@@ -72,6 +72,7 @@ allowed-tools: Read, Glob, Grep
 ## Critical Rules
 
 {{#RULES}}
+
 - {{RULE_TYPE}} {{RULE_DESCRIPTION}}
 {{/RULES}}
 <!-- Use ALWAYS, NEVER, PREFER, AVOID prefixes -->
@@ -112,7 +113,8 @@ allowed-tools: Read, Glob, Grep
 ## Key Files
 
 | File | Purpose |
-|------|---------|
+| ---- | ------- |
+
 {{#KEY_FILES}}
 | `{{FILE_PATH}}` | {{FILE_PURPOSE}} |
 {{/KEY_FILES}}
