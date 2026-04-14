@@ -3,7 +3,7 @@
 > **Eliminate the AI cold-start problem.** Generate `AGENTS.md` + domain skills for any project in seconds.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Standard: Agent Skills](https://img.shields.io/badge/Standard-Agent%20Skills-blue.svg)](https://github.com/gentleman-programming/agent-skills)
+[![Standard: Agent Skills](https://img.shields.io/badge/Standard-Agent%20Skills-blue.svg)]()
 [![Compatible: Claude | Cursor | Copilot | Gemini | OpenCode](https://img.shields.io/badge/AI-Claude%20%7C%20Cursor%20%7C%20Copilot%20%7C%20Gemini%20%7C%20OpenCode-purple.svg)]()
 
 ---
@@ -276,7 +276,7 @@ The map should be **glanceable**. The territory should be **deep**. Don't duplic
 
 ## 📜 License
 
-MIT © [Gentleman Programming](https://github.com/gentleman-programming) & contributors.
+MIT © alvarorestrepo
 
 ---
 
