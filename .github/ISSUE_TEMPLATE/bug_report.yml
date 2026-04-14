@@ -1,0 +1,54 @@
+name: Bug Report
+description: Report a problem with the project-knowledge-bootstrap skill
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the details below so we can fix it quickly.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly. What did you expect vs what actually happened?
+      placeholder: The skill generated an AGENTS.md with incorrect module paths...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Provide a minimal example or the exact steps to trigger the bug.
+      placeholder: |
+        1. Run the skill on a Go project with `cmd/` + `internal/` layout
+        2. Enter CREATE mode
+        3. The generated AGENTS.md lists `internal/` as a domain module instead of grouping by package
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened instead?
+      placeholder: The skill should recognize Go standard layout and group `internal/` packages under one module skill.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of the skill are you using?
+      placeholder: v1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any other context, screenshots, or logs that might help.

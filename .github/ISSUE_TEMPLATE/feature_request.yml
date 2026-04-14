@@ -1,0 +1,46 @@
+name: Feature Request
+description: Suggest an improvement or new capability for the skill
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to make `project-knowledge-bootstrap` better? We'd love to hear it!
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Explain the pain point or gap you've identified.
+      placeholder: When bootstrapping a Rust workspace, the skill doesn't detect Cargo workspaces correctly...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe what you'd like to see happen.
+      placeholder: Add detection for `[workspace]` in `Cargo.toml` and generate a monorepo-style AGENTS.md...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you thought of other ways to solve this?
+      placeholder: I tried manually editing the AGENTS.md after generation, but it gets overwritten on UPDATE mode.
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      description: How big is this change?
+      options:
+        - Small tweak (wording, minor rule)
+        - New detection/heuristic (new language, framework, pattern)
+        - Major architectural change (new phase, new artifact type)
+    validations:
+      required: true
