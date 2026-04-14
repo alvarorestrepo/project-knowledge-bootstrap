@@ -174,27 +174,30 @@ Runs sync, saves a summary to Engram memory, and outputs the Bootstrap Report.
 
 ## 🛠 Installation
 
-Copy this skill into your project's `skills/` directory, or use it as an agent sub-agent if your orchestrator supports it.
+### Via skills.sh Ecosystem (Recommended)
 
-### Install Globally (Recommended)
-
-Available across all your projects:
+This skill is part of the **open agent skills ecosystem** at [skills.sh](https://skills.sh). It requires zero registration — just run:
 
 ```bash
+# Global (recommended): available in ALL projects
 npx skills add alvarorestrepo/project-knowledge-bootstrap -g --all -y
-```
 
-### Install Per-Project
-
-Available only in the current directory:
-
-```bash
+# Per-project: available only in the current directory
 npx skills add alvarorestrepo/project-knowledge-bootstrap --all -y
 ```
 
+The `skills` CLI auto-detects **45+ AI agents** (Claude, Cursor, OpenCode, Gemini, Copilot, Cline, Codex, Windsurf, and more) and installs the skill to each one automatically.
+
+#### Where it gets installed
+
+| Scope       | Example Path                                                                 |
+| ----------- | ---------------------------------------------------------------------------- |
+| **Global**  | `~/.config/opencode/skills/`, `~/.claude/skills/`, `~/.cursor/skills/`, etc. |
+| **Project** | `./.agents/skills/`, `./.claude/skills/`, `./.cursor/skills/`, etc.          |
+
 ### Generated `setup.sh` Usage
 
-After running the bootstrap on your project, it generates a `setup.sh` that configures `AGENTS.md` and skill symlinks across all AI tools:
+After the bootstrap runs on your project, it generates a `setup.sh` that configures `AGENTS.md` + skill symlinks:
 
 ```bash
 # Project-level setup (default)
@@ -210,6 +213,13 @@ After running the bootstrap on your project, it generates a `setup.sh` that conf
 ./skills/setup.sh --gemini      # Gemini CLI
 ./skills/setup.sh --opencode    # OpenCode
 ```
+
+### 🏆 Leaderboard & Discovery
+
+You do **not** need to submit this skill to [skills.sh](https://skills.sh). Because it's a public GitHub repo with a valid `SKILL.md`, it is already discoverable and installable.
+
+- **To climb the leaderboard**: encourage others to install it. Rankings are based on anonymous telemetry from the `skills` CLI.
+- **Official badge**: the "Official" badge on skills.sh is reserved for curated skills from recognized organizations (e.g., `vercel-labs`, `anthropics`, `microsoft`). If you believe this skill should be considered, open a discussion in the [vercel-labs/skills](https://github.com/vercel-labs/skills) repo.
 
 ---
 
