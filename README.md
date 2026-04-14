@@ -176,24 +176,39 @@ Runs sync, saves a summary to Engram memory, and outputs the Bootstrap Report.
 
 Copy this skill into your project's `skills/` directory, or use it as an agent sub-agent if your orchestrator supports it.
 
-### For OpenCode / Gentleman.AI
+### Install Globally (Recommended)
+
+Available across all your projects:
 
 ```bash
-# If you're using the agent skills standard:
-cp -r project-knowledge-bootstrap ~/.config/opencode/skills/
+npx skills add alvarorestrepo/project-knowledge-bootstrap -g --all -y
+```
+
+### Install Per-Project
+
+Available only in the current directory:
+
+```bash
+npx skills add alvarorestrepo/project-knowledge-bootstrap --all -y
 ```
 
 ### Generated `setup.sh` Usage
 
-After running the bootstrap on your project, it generates a `setup.sh` that works across all AI tools:
+After running the bootstrap on your project, it generates a `setup.sh` that configures `AGENTS.md` and skill symlinks across all AI tools:
 
 ```bash
+# Project-level setup (default)
+./skills/setup.sh --all
+
+# Global setup (available in all projects)
+./skills/setup.sh --all --global
+
+# Individual tools
 ./skills/setup.sh --claude      # Claude Code
 ./skills/setup.sh --cursor      # Cursor
 ./skills/setup.sh --copilot     # GitHub Copilot
 ./skills/setup.sh --gemini      # Gemini CLI
 ./skills/setup.sh --opencode    # OpenCode
-./skills/setup.sh --all         # All of the above
 ```
 
 ---
