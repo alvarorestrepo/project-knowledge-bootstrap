@@ -179,7 +179,13 @@ setup_claude() {
         local target="$HOME/.claude/skills"
         create_skills_symlink "$target" "$HOME/.claude"
         echo -e "${GREEN}  ✓ ~/.claude/skills -> $SKILLS_SOURCE${NC}"
-        copy_agents_md "CLAUDE.md" "$HOME"
+
+        if [ -f "$REPO_ROOT/AGENTS.md" ]; then
+            cp "$REPO_ROOT/AGENTS.md" "$HOME/CLAUDE.md"
+            echo -e "${GREEN}  ✓ AGENTS.md -> ~/CLAUDE.md${NC}"
+        else
+            echo -e "${YELLOW}  ! No AGENTS.md found to copy${NC}"
+        fi
     else
         local target="$REPO_ROOT/.claude/skills"
         create_skills_symlink "$target" "$REPO_ROOT/.claude"
@@ -231,7 +237,13 @@ setup_gemini() {
         local target="$HOME/.gemini/skills"
         create_skills_symlink "$target" "$HOME/.gemini"
         echo -e "${GREEN}  ✓ ~/.gemini/skills -> $SKILLS_SOURCE${NC}"
-        copy_agents_md "GEMINI.md" "$HOME"
+
+        if [ -f "$REPO_ROOT/AGENTS.md" ]; then
+            cp "$REPO_ROOT/AGENTS.md" "$HOME/GEMINI.md"
+            echo -e "${GREEN}  ✓ AGENTS.md -> ~/GEMINI.md${NC}"
+        else
+            echo -e "${YELLOW}  ! No AGENTS.md found to copy${NC}"
+        fi
     else
         local target="$REPO_ROOT/.gemini/skills"
         create_skills_symlink "$target" "$REPO_ROOT/.gemini"
