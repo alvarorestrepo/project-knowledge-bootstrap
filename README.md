@@ -195,9 +195,11 @@ The `skills` CLI auto-detects **45+ AI agents** (Claude, Cursor, OpenCode, Gemin
 | **Global**  | `~/.config/opencode/skills/`, `~/.claude/skills/`, `~/.cursor/skills/`, etc. |
 | **Project** | `./.agents/skills/`, `./.claude/skills/`, `./.cursor/skills/`, etc.          |
 
-### Generated `setup.sh` Usage
+### Generated Setup Scripts Usage
 
-After the bootstrap runs on your project, it generates a `setup.sh` that configures `AGENTS.md` + skill symlinks:
+After the bootstrap runs on your project, it generates cross-platform setup scripts that configure `AGENTS.md` + skills across all AI tools.
+
+#### macOS / Linux / WSL / Git Bash
 
 ```bash
 # Project-level setup (default)
@@ -212,6 +214,25 @@ After the bootstrap runs on your project, it generates a `setup.sh` that configu
 ./skills/setup.sh --copilot     # GitHub Copilot
 ./skills/setup.sh --gemini      # Gemini CLI
 ./skills/setup.sh --opencode    # OpenCode
+```
+
+> **Windows users in Git Bash / MSYS2 / Cygwin**: `setup.sh` automatically detects Windows and uses **file copies** instead of symlinks (symlinks require admin privileges on Windows).
+
+#### Windows PowerShell / CMD
+
+```powershell
+# Project-level setup (default)
+.\skills\setup.ps1 -All
+
+# Global setup (available in all projects)
+.\skills\setup.ps1 -All -Global
+
+# Individual tools
+.\skills\setup.ps1 -Claude     # Claude Code
+.\skills\setup.ps1 -Cursor     # Cursor
+.\skills\setup.ps1 -Copilot    # GitHub Copilot
+.\skills\setup.ps1 -Gemini     # Gemini CLI
+.\skills\setup.ps1 -OpenCode   # OpenCode
 ```
 
 ### 🏆 Leaderboard & Discovery
@@ -272,7 +293,8 @@ project-knowledge-bootstrap/
 ├── assets/
 │   ├── AGENTS-TEMPLATE.md      # Template for AGENTS.md
 │   ├── SKILL-TEMPLATE.md       # Template for domain skills
-│   ├── setup.sh                # Multi-environment installer template
+│   ├── setup.sh                # Unix installer (Bash 3+)
+│   ├── setup.ps1               # Windows installer (PowerShell)
 │   └── sync.sh                 # Auto-invoke sync script template
 ├── README.md                   # This file
 └── LICENSE                     # MIT License

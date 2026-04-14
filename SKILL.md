@@ -28,7 +28,7 @@ problem. You are NOT an orchestrator — you generate knowledge, SDD manages pro
 
 1. **AGENTS.md** — A lightweight map (~100-150 lines) at project root
 2. **Domain skills** — Deep knowledge per module in `skills/` directory
-3. **Infrastructure** — `setup.sh` (multi-env installer) + `skill-sync/` (auto-invoke sync)
+3. **Infrastructure** — `setup.sh` (Unix installer), `setup.ps1` (Windows installer) + `skill-sync/` (auto-invoke sync)
 
 **What you do NOT do:**
 
@@ -92,9 +92,9 @@ If `skills/` directory exists:
    - If it does NOT contain this field → **HAND-WRITTEN skill** (NEVER touch)
 3. Record which modules already have generated skills
 
-### Step 0.4: Check for Existing setup.sh and sync.sh
+### Step 0.4: Check for Existing setup.sh, setup.ps1, and sync.sh
 
-If `skills/setup.sh` or `skills/skill-sync/assets/sync.sh` exist:
+If `skills/setup.sh`, `skills/setup.ps1`, or `skills/skill-sync/assets/sync.sh` exist:
 
 1. Read the version comment at the top of each file:
    ```bash
@@ -134,6 +134,7 @@ Proceeding in {MODE} mode...
 | New modules         | Generate skills              | Generate skills                       |
 | Removed modules     | N/A                          | WARN user, do NOT delete skill        |
 | setup.sh            | Generate from template       | Update only if template version newer |
+| setup.ps1           | Generate from template       | Update only if template version newer |
 | sync.sh             | Generate from template       | Update only if template version newer |
 
 ### UPDATE MODE: Smart Merge Rules for AGENTS.md
@@ -669,22 +670,28 @@ Adapt the template for this specific project:
 - For monorepos: handle per-component AGENTS.md files
 - Verify the script works with Bash 3 (macOS default)
 
-The setup.sh must support these environments:
+Generate both `setup.sh` (Bash 3+, macOS/Linux/WSL/Git Bash) and `setup.ps1` (Windows PowerShell/CMD). Both must support the same environments:
 
-| Flag         | Environment      | Skills Directory    | Rules File                        |
-| ------------ | ---------------- | ------------------- | --------------------------------- |
-| `--claude`   | Claude Code      | `.claude/skills/`   | `CLAUDE.md`                       |
-| `--cursor`   | Cursor           | `.cursor/skills/`   | `.cursorrules`                    |
-| `--opencode` | OpenCode         | `.opencode/skills/` | — (uses AGENTS.md natively)       |
-| `--gemini`   | Gemini CLI       | `.gemini/skills/`   | `GEMINI.md`                       |
-| `--copilot`  | GitHub Copilot   | — (no skills dir)   | `.github/copilot-instructions.md` |
-| `--all`      | All of the above | —                   | —                                 |
+| Tool           | Unix Path           | Windows Path        | Rules File                        |
+| -------------- | ------------------- | ------------------- | --------------------------------- |
+| Claude Code    | `.claude/skills/`   | `.claude\skills\`   | `CLAUDE.md`                       |
+| Cursor         | `.cursor/skills/`   | `.cursor\skills\`   | `.cursorrules`                    |
+| OpenCode       | `.opencode/skills/` | `.opencode\skills\` | — (uses AGENTS.md natively)       |
+| Gemini CLI     | `.gemini/skills/`   | `.gemini\skills\`   | `GEMINI.md`                       |
+| GitHub Copilot | —                   | —                   | `.github/copilot-instructions.md` |
 
-**How it works:**
+**setup.sh behavior:**
 
 1. Symlinks `skills/` → `{tool_dir}/skills/` (so all tools share the same skills)
-2. Copies `AGENTS.md` → tool-specific filename (CLAUDE.md, GEMINI.md, etc.)
-3. For monorepos, copies ALL AGENTS.md files (root + component-level)
+2. On Windows (Git Bash / MSYS / Cygwin), uses `cp -r` instead of `ln -s` because symlinks require admin privileges on Windows.
+3. Copies `AGENTS.md` → tool-specific filename (CLAUDE.md, GEMINI.md, etc.)
+4. For monorepos, copies ALL AGENTS.md files (root + component-level)
+
+**setup.ps1 behavior:**
+
+1. Uses `Copy-Item -Recurse` instead of symlinks (Windows-compatible)
+2. Supports `-Global` flag for `%USERPROFILE%`-based installation
+3. Copies `AGENTS.md` → tool-specific filename with Windows paths
 
 ### Step 4.2: Create skill-sync
 
@@ -767,6 +774,7 @@ Phase 4: Generate infrastructure (with version comments)
 ├── CREATE MODE: Generate from templates
 ├── UPDATE MODE: Update only if template version is newer
 ├── skills/setup.sh
+├── skills/setup.ps1
 ├── skills/skill-sync/SKILL.md
 └── skills/skill-sync/assets/sync.sh
 
@@ -806,7 +814,7 @@ communicates what happened, distinguishing between create and update operations.
 ### Unchanged
 
 - {list of files that exist but didn't need changes}
-- Example: `skills/setup.sh` — version 1.0 matches template, skipped
+- Example: `skills/setup.sh` / `skills/setup.ps1` — version 1.0 matches template, skipped
 - Example: `skills/{project}-custom/SKILL.md` — hand-written, not touched
 
 ### Warnings
@@ -832,7 +840,7 @@ communicates what happened, distinguishing between create and update operations.
 
 ### Next Steps
 
-- Run `./skills/setup.sh --{your-tool}` to configure your AI assistant
+- Run `./skills/setup.sh --{your-tool}` (Unix) or `.\skills\setup.ps1 -{Tool}` (Windows) to configure your AI assistant
 - Run `./skills/skill-sync/assets/sync.sh` after adding new skills
 - Verify AGENTS.md is under 150 lines
 - Review generated skills for accuracy
@@ -856,7 +864,7 @@ communicates what happened, distinguishing between create and update operations.
 4. **Don't duplicate content.** If it's in a module skill, don't repeat it in AGENTS.md.
 5. **AGENTS.md is the MAP, skills are the TERRITORY.** The map should be glanceable.
 6. **Idempotent re-runs.** Phase 0 detects existing artifacts via signatures. Generated files are safe to update; hand-written files are NEVER touched.
-7. **setup.sh must be Bash 3 compatible.** macOS ships Bash 3 by default.
+7. **setup.sh must be Bash 3 compatible.** macOS ships Bash 3 by default. setup.ps1 covers Windows PowerShell/CMD.
 8. **sync.sh must be idempotent.** Running it twice produces identical output.
 9. **Skills follow Agent Skills open standard.** Proper frontmatter, proper structure.
 10. **This skill generates knowledge, SDD manages process.** Never create SDD artifacts.
@@ -872,7 +880,8 @@ All templates are in the `assets/` directory of this skill:
 
 - `assets/AGENTS-TEMPLATE.md` — Template for AGENTS.md
 - `assets/SKILL-TEMPLATE.md` — Template for domain skills
-- `assets/setup.sh` — Multi-environment installer (customize per project)
+- `assets/setup.sh` — Unix installer (Bash 3+, customize per project)
+- `assets/setup.ps1` — Windows installer (PowerShell, customize per project)
 - `assets/sync.sh` — Auto-invoke table generator (customize scope mapping)
 
 Read these templates BEFORE generating files. They contain the exact structure
@@ -885,5 +894,6 @@ and placeholders to follow.
 - Works with SDD Orchestrator (engram, openspec, hybrid, or none mode)
 - Works standalone (user can run it directly without SDD)
 - Works with any AI tool that supports skills (Claude, Gemini, Copilot, Cursor, OpenCode)
-- Generated setup.sh supports multi-tool environments
+- Generated setup.sh supports Unix environments (Bash 3+, macOS default)
+- Generated setup.ps1 supports Windows environments (PowerShell/CMD)
 - Generated sync.sh is Bash 3 compatible (macOS default)

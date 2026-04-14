@@ -10,15 +10,24 @@
 #   - GitHub Copilot: .github/copilot-instructions.md copy
 #
 # Usage:
-#   ./setup.sh                  # Interactive mode (select AI assistants)
-#   ./setup.sh --all            # Configure all AI assistants (project)
-#   ./setup.sh --all --global   # Configure all AI assistants (global)
-#   ./setup.sh --claude         # Configure only Claude Code
-#   ./setup.sh --claude --cursor --global  # Global setup for Claude + Cursor
+#   ./setup.sh              # Interactive mode (select AI assistants)
+#   ./setup.sh --all        # Configure all AI assistants
+#   ./setup.sh --claude     # Configure only Claude Code
+#   ./setup.sh --claude --cursor  # Configure multiple
+#
+# On Windows PowerShell/CMD, use setup.ps1 instead.
 #
 # Compatible with Bash 3+ (macOS default)
 
 set -e
+
+# Detect Windows environments (Git Bash, MSYS, Cygwin)
+IS_WINDOWS=false
+USE_COPY=false
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$MSYSTEM" ]]; then
+    IS_WINDOWS=true
+    USE_COPY=true
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -123,9 +132,9 @@ show_menu() {
     SETUP_COPILOT=${selected[4]}
 }
 
-# Create symlink for skills directory
-# $1 = target directory (e.g., .claude/skills or ~/.claude/skills)
-# $2 = parent directory to create if missing (e.g., .claude or ~/.claude)
+# Create symlink (or copy on Windows) for skills directory
+# $1 = target directory (e.g., .claude/skills)
+# $2 = parent directory to create if missing (e.g., .claude)
 create_skills_symlink() {
     local target="$1"
     local parent="$2"
@@ -141,7 +150,12 @@ create_skills_symlink() {
         echo -e "${YELLOW}  ! Existing skills/ backed up${NC}"
     fi
 
-    ln -s "$SKILLS_SOURCE" "$target"
+    if [ "$USE_COPY" = true ]; then
+        cp -r "$SKILLS_SOURCE" "$target"
+        echo -e "${GREEN}  ✓ Copied skills/ -> $target${NC}"
+    else
+        ln -s "$SKILLS_SOURCE" "$target"
+    fi
 }
 
 # Copy all AGENTS.md files to a tool-specific name
@@ -411,22 +425,38 @@ fi
 # SUMMARY
 # =============================================================================
 
+resolve_path() {
+    local path="$1"
+    if [ -L "$path" ]; then
+        local link
+        link=$(readlink "$path" 2>/dev/null) || link=$(ls -l "$path" | awk '{print $NF}')
+        echo "$path -> $link"
+    elif [ -e "$path" ]; then
+        echo "$path"
+    else
+        echo "$path"
+    fi
+}
+
 echo -e "${GREEN}Done! Configured $SKILL_COUNT AI skills.${NC}"
 echo ""
-echo "Configured ($local_scope):"
+echo "Installation report ($local_scope):"
+echo ""
+
 if [ "$SETUP_GLOBAL" = true ]; then
-    [ "$SETUP_CLAUDE" = true ] && echo "  - Claude Code:    ~/.claude/skills/ + ~/CLAUDE.md"
-    [ "$SETUP_CURSOR" = true ] && echo "  - Cursor:         ~/.cursor/skills/ + ~/.cursorrules"
-    [ "$SETUP_OPENCODE" = true ] && echo "  - OpenCode:       ~/.config/opencode/skills/"
-    [ "$SETUP_GEMINI" = true ] && echo "  - Gemini CLI:     ~/.gemini/skills/ + ~/GEMINI.md"
-    [ "$SETUP_COPILOT" = true ] && echo "  - GitHub Copilot: project-only (skipped globally)"
+    [ "$SETUP_CLAUDE" = true ] && echo "  Claude Code    $(resolve_path "$HOME/.claude/skills")" && echo "                 $(resolve_path "$HOME/CLAUDE.md")"
+    [ "$SETUP_CURSOR" = true ] && echo "  Cursor         $(resolve_path "$HOME/.cursor/skills")" && echo "                 $(resolve_path "$HOME/.cursorrules")"
+    [ "$SETUP_OPENCODE" = true ] && echo "  OpenCode       $(resolve_path "$HOME/.config/opencode/skills")"
+    [ "$SETUP_GEMINI" = true ] && echo "  Gemini CLI     $(resolve_path "$HOME/.gemini/skills")" && echo "                 $(resolve_path "$HOME/GEMINI.md")"
+    [ "$SETUP_COPILOT" = true ] && echo "  GitHub Copilot project-only (skipped globally)"
 else
-    [ "$SETUP_CLAUDE" = true ] && echo "  - Claude Code:    .claude/skills/ + CLAUDE.md"
-    [ "$SETUP_CURSOR" = true ] && echo "  - Cursor:         .cursor/skills/ + .cursorrules"
-    [ "$SETUP_OPENCODE" = true ] && echo "  - OpenCode:       .opencode/skills/ + AGENTS.md (native)"
-    [ "$SETUP_GEMINI" = true ] && echo "  - Gemini CLI:     .gemini/skills/ + GEMINI.md"
-    [ "$SETUP_COPILOT" = true ] && echo "  - GitHub Copilot: .github/copilot-instructions.md"
+    [ "$SETUP_CLAUDE" = true ] && echo "  Claude Code    $(resolve_path "$REPO_ROOT/.claude/skills")" && echo "                 $(resolve_path "$REPO_ROOT/CLAUDE.md")"
+    [ "$SETUP_CURSOR" = true ] && echo "  Cursor         $(resolve_path "$REPO_ROOT/.cursor/skills")" && echo "                 $(resolve_path "$REPO_ROOT/.cursorrules")"
+    [ "$SETUP_OPENCODE" = true ] && echo "  OpenCode       $(resolve_path "$REPO_ROOT/.opencode/skills")" && echo "                 $(resolve_path "$REPO_ROOT/AGENTS.md") (native)"
+    [ "$SETUP_GEMINI" = true ] && echo "  Gemini CLI     $(resolve_path "$REPO_ROOT/.gemini/skills")" && echo "                 $(resolve_path "$REPO_ROOT/GEMINI.md")"
+    [ "$SETUP_COPILOT" = true ] && echo "  GitHub Copilot $(resolve_path "$REPO_ROOT/.github/copilot-instructions.md")"
 fi
+
 echo ""
 echo -e "${BLUE}Note: Restart your AI assistant to load the skills.${NC}"
 echo -e "${BLUE}      AGENTS.md is the source of truth — edit it, then re-run this script.${NC}"
