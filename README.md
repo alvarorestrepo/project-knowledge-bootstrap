@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Standard: Agent Skills](https://img.shields.io/badge/Standard-Agent%20Skills-blue.svg)]()
 [![Compatible: Claude | Cursor | Copilot | Gemini | OpenCode](https://img.shields.io/badge/AI-Claude%20%7C%20Cursor%20%7C%20Copilot%20%7C%20Gemini%20%7C%20OpenCode-purple.svg)]()
+[![Contributing](https://img.shields.io/badge/Contributing-Guide-green.svg)](./CONTRIBUTING.md)
 
 ---
 
@@ -263,6 +264,20 @@ project-knowledge-bootstrap/
 | **OpenCode**       | `.opencode/skills/` | `AGENTS.md`                       | ✅        |
 | **Gemini CLI**     | `.gemini/skills/`   | `GEMINI.md`                       | ✅        |
 | **GitHub Copilot** | —                   | `.github/copilot-instructions.md` | ✅        |
+
+---
+
+## 🤝 Contributing
+
+We love thoughtful contributions! Whether it's a bug fix, a new framework detection, or improved documentation, your help makes this skill better for everyone.
+
+**Before you start:**
+
+1. 📖 Read the [**Contributing Guide**](./CONTRIBUTING.md) — it explains our philosophy, commit conventions, and how to test your changes.
+2. 📜 Review the [**Code of Conduct**](./CODE_OF_CONDUCT.md) — be kind, be constructive.
+3. 🔍 Check existing [Issues](https://github.com/alvarorestrepo/project-knowledge-bootstrap/issues) and [Discussions](https://github.com/alvarorestrepo/project-knowledge-bootstrap/discussions).
+
+> **Contribuciones bien pensadas > contribuciones rápidas.**
 
 ---
 
