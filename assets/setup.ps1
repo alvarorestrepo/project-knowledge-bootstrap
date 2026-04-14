@@ -1,11 +1,6 @@
 # project-knowledge-bootstrap Windows Setup
-# Version: 1.1.1
+# Version: 1.1.2
 # Configures AI coding assistants on Windows using PowerShell
-# Usage:
-#   .\setup.ps1              # Interactive mode
-#   .\setup.ps1 -All         # All AI assistants (project)
-#   .\setup.ps1 -All -Global # All AI assistants (global)
-#   .\setup.ps1 -Claude      # Only Claude Code
 
 param(
     [switch]$All,
@@ -24,14 +19,27 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
 $SkillsSource = $ScriptDir
 $ProjectName = Split-Path -Leaf $RepoRoot
-
-# Windows-friendly paths for global config
 $HomeDir = $env:USERPROFILE
+
+function Write-Banner {
+    $scopeLabel = if ($Global) { "global" } else { "project" }
+    Write-Host ""
+    Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "║  🧠  project-knowledge-bootstrap                           ║" -ForegroundColor Cyan
+    Write-Host "║      Configure AI assistants for                           ║" -ForegroundColor Cyan
+    Write-Host "║      $ProjectName ($scopeLabel)                              ║" -ForegroundColor Cyan
+    Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
+}
+
+function Write-Box($Icon, $Text, $Color = "Green") {
+    Write-Host "┌────────────────────────────────────────────────────────────┐" -ForegroundColor $Color
+    Write-Host "│ $Icon  $Text" -ForegroundColor $Color
+    Write-Host "└────────────────────────────────────────────────────────────┘" -ForegroundColor $Color
+}
 
 function Show-Help {
     Write-Host "Usage: setup.ps1 [OPTIONS]"
-    Write-Host ""
-    Write-Host "Configure AI coding assistants for $ProjectName development."
     Write-Host ""
     Write-Host "Options:"
     Write-Host "  -All       Configure all AI assistants"
@@ -42,33 +50,27 @@ function Show-Help {
     Write-Host "  -Gemini    Configure Gemini CLI"
     Write-Host "  -Copilot   Configure GitHub Copilot"
     Write-Host "  -Help      Show this help message"
-    Write-Host ""
-    Write-Host "Examples:"
-    Write-Host "  .\setup.ps1             # Interactive selection (project)"
-    Write-Host "  .\setup.ps1 -All        # All AI assistants (project)"
-    Write-Host "  .\setup.ps1 -All -Global # All AI assistants (global)"
 }
 
 function Show-Menu {
     $scopeLabel = if ($Global) { "global" } else { "project" }
-    Write-Host "Which AI assistants do you use? ($scopeLabel)" -ForegroundColor White -BackgroundColor Black
-    Write-Host "(Use numbers to toggle, Enter to confirm)" -ForegroundColor Cyan
+    Write-Host "🎛️  Which AI assistants do you use? ($scopeLabel)" -ForegroundColor White
+    Write-Host "   (Use numbers to toggle, Enter to confirm)" -ForegroundColor DarkGray
     Write-Host ""
 
-    $options = @("Claude Code", "Cursor", "OpenCode", "Gemini CLI", "GitHub Copilot")
+    $options = @("🟣 Claude Code", "⚫ Cursor", "🔵 OpenCode", "🔴 Gemini CLI", "🟠 GitHub Copilot")
     $selected = @($true, $false, $false, $false, $false)
 
     while ($true) {
         for ($i = 0; $i -lt $options.Count; $i++) {
-            $mark = if ($selected[$i]) { "[x]" } else { "[ ]" }
-            $color = if ($selected[$i]) { "Green" } else { "White" }
-            Write-Host "  $mark $($i + 1). $($options[$i])" -ForegroundColor $color
+            $mark = if ($selected[$i]) { "[✓]" } else { "[ ]" }
+            $color = if ($selected[$i]) { "Green" } else { "DarkGray" }
+            Write-Host "     $mark $($i + 1). $($options[$i])" -ForegroundColor $color
         }
         Write-Host ""
-        Write-Host "  a. Select all" -ForegroundColor Yellow
-        Write-Host "  n. Select none" -ForegroundColor Yellow
+        Write-Host "     a. Select all    n. Select none" -ForegroundColor Yellow
         Write-Host ""
-        $choice = Read-Host "Toggle (1-5, a, n) or Enter to confirm"
+        $choice = Read-Host "   Toggle (1-5, a, n) or press Enter"
 
         switch ($choice) {
             "1" { $selected[0] = -not $selected[0] }
@@ -81,10 +83,15 @@ function Show-Menu {
             "n" { $selected = @($false, $false, $false, $false, $false) }
             "N" { $selected = @($false, $false, $false, $false, $false) }
             "" { break }
-            default { Write-Host "Invalid option" -ForegroundColor Red }
+            default { Write-Host "   Invalid option" -ForegroundColor Red }
         }
 
         if ($choice -eq "") { break }
+        [console]::SetCursorPosition(0, [console]::CursorTop - 10)
+        for ($i = 0; $i -lt 10; $i++) {
+            Write-Host (" " * 60)
+        }
+        [console]::SetCursorPosition(0, [console]::CursorTop - 10)
     }
 
     $global:SETUP_CLAUDE = $selected[0]
@@ -95,160 +102,111 @@ function Show-Menu {
 }
 
 function Copy-SkillsDirectory {
-    param(
-        [string]$Target,
-        [string]$Parent
-    )
-
+    param($Target, $Parent)
     if (-not (Test-Path $Parent)) {
         New-Item -ItemType Directory -Path $Parent -Force | Out-Null
     }
-
     if (Test-Path $Target) {
         if ((Get-Item $Target).PSIsContainer) {
             $backup = "$Target.backup.$(Get-Date -Format 'yyyyMMddHHmmss')"
             Move-Item -Path $Target -Destination $backup -Force
-            Write-Host "  ! Existing skills/ backed up" -ForegroundColor Yellow
+            Write-Host "     ⚠️  Existing skills/ backed up" -ForegroundColor Yellow
         } else {
             Remove-Item $Target -Force
         }
     }
-
     Copy-Item -Path $SkillsSource -Destination $Target -Recurse -Force
+    Write-Host "     📦 Copied skills/ → $Target" -ForegroundColor Green
 }
 
-function Copy-AgentsMd {
-    param(
-        [string]$TargetName,
-        [string]$SearchRoot
-    )
-
-    $agentsFiles = Get-ChildItem -Path $SearchRoot -Filter "AGENTS.md" -Recurse -ErrorAction SilentlyContinue |
-        Where-Object {
-            $_.FullName -notmatch 'node_modules' -and
-            $_.FullName -notmatch '\.git' -and
-            $_.FullName -notmatch 'vendor' -and
-            $_.FullName -notmatch '\.next' -and
-            $_.FullName -notmatch 'dist' -and
-            $_.FullName -notmatch '\.claude' -and
-            $_.FullName -notmatch '\.cursor' -and
-            $_.FullName -notmatch '\.gemini'
-        }
-
-    $count = 0
-    foreach ($file in $agentsFiles) {
-        $dest = Join-Path $file.DirectoryName $TargetName
-        Copy-Item -Path $file.FullName -Destination $dest -Force
-        $count++
-    }
-
-    if ($count -gt 0) {
-        Write-Host "  Copied $count AGENTS.md -> $TargetName" -ForegroundColor Green
-    } else {
-        Write-Host "  ! No AGENTS.md files found to copy" -ForegroundColor Yellow
-    }
-}
-
-# =============================================================================
-# TOOL-SPECIFIC SETUP FUNCTIONS
-# =============================================================================
+# ─── Tool Setup Functions ────────────────────────────────────────────
 
 function Setup-Claude {
+    Write-Host "   🟣 Claude Code" -ForegroundColor Magenta
     if ($Global) {
-        $target = Join-Path $HomeDir ".claude\skills"
-        Copy-SkillsDirectory -Target $target -Parent (Join-Path $HomeDir ".claude")
-        Write-Host "  ~\.claude\skills -> $SkillsSource" -ForegroundColor Green
-
+        Copy-SkillsDirectory -Target (Join-Path $HomeDir ".claude\skills") -Parent (Join-Path $HomeDir ".claude")
         $agentsMd = Join-Path $RepoRoot "AGENTS.md"
         if (Test-Path $agentsMd) {
             Copy-Item -Path $agentsMd -Destination (Join-Path $HomeDir "CLAUDE.md") -Force
-            Write-Host "  AGENTS.md -> ~\CLAUDE.md" -ForegroundColor Green
+            Write-Host "     📝 Copied AGENTS.md → ~\CLAUDE.md" -ForegroundColor Green -NoNewline; Write-Host ""
         }
     } else {
-        $target = Join-Path $RepoRoot ".claude\skills"
-        Copy-SkillsDirectory -Target $target -Parent (Join-Path $RepoRoot ".claude")
-        Write-Host "  .claude\skills -> skills\" -ForegroundColor Green
-        Copy-AgentsMd -TargetName "CLAUDE.md" -SearchRoot $RepoRoot
+        Copy-SkillsDirectory -Target (Join-Path $RepoRoot ".claude\skills") -Parent (Join-Path $RepoRoot ".claude")
+        $agentsMd = Join-Path $RepoRoot "AGENTS.md"
+        if (Test-Path $agentsMd) {
+            Copy-Item -Path $agentsMd -Destination (Join-Path $RepoRoot "CLAUDE.md") -Force
+            Write-Host "     📝 Copied AGENTS.md → CLAUDE.md" -ForegroundColor Green -NoNewline; Write-Host ""
+        }
     }
 }
 
 function Setup-Cursor {
+    Write-Host "   ⚫ Cursor" -ForegroundColor White
     if ($Global) {
-        $target = Join-Path $HomeDir ".cursor\skills"
-        Copy-SkillsDirectory -Target $target -Parent (Join-Path $HomeDir ".cursor")
-        Write-Host "  ~\.cursor\skills -> $SkillsSource" -ForegroundColor Green
-
+        Copy-SkillsDirectory -Target (Join-Path $HomeDir ".cursor\skills") -Parent (Join-Path $HomeDir ".cursor")
         $agentsMd = Join-Path $RepoRoot "AGENTS.md"
         if (Test-Path $agentsMd) {
             Copy-Item -Path $agentsMd -Destination (Join-Path $HomeDir ".cursorrules") -Force
-            Write-Host "  AGENTS.md -> ~\.cursorrules" -ForegroundColor Green
+            Write-Host "     📝 Copied AGENTS.md → ~\.cursorrules" -ForegroundColor Green -NoNewline; Write-Host ""
         }
     } else {
-        $target = Join-Path $RepoRoot ".cursor\skills"
-        Copy-SkillsDirectory -Target $target -Parent (Join-Path $RepoRoot ".cursor")
-        Write-Host "  .cursor\skills -> skills\" -ForegroundColor Green
-
+        Copy-SkillsDirectory -Target (Join-Path $RepoRoot ".cursor\skills") -Parent (Join-Path $RepoRoot ".cursor")
         $agentsMd = Join-Path $RepoRoot "AGENTS.md"
         if (Test-Path $agentsMd) {
             Copy-Item -Path $agentsMd -Destination (Join-Path $RepoRoot ".cursorrules") -Force
-            Write-Host "  AGENTS.md -> .cursorrules" -ForegroundColor Green
+            Write-Host "     📝 Copied AGENTS.md → .cursorrules" -ForegroundColor Green -NoNewline; Write-Host ""
         }
     }
 }
 
 function Setup-OpenCode {
+    Write-Host "   🔵 OpenCode" -ForegroundColor Blue
     if ($Global) {
-        $target = Join-Path $HomeDir ".opencode\skills"
-        Copy-SkillsDirectory -Target $target -Parent (Join-Path $HomeDir ".opencode")
-        Write-Host "  ~\.opencode\skills -> $SkillsSource" -ForegroundColor Green
-        Write-Host "  OpenCode uses AGENTS.md natively" -ForegroundColor Green
+        Copy-SkillsDirectory -Target (Join-Path $HomeDir ".opencode\skills") -Parent (Join-Path $HomeDir ".opencode")
+        Write-Host "     ✅ OpenCode uses AGENTS.md natively" -ForegroundColor Green
     } else {
-        $target = Join-Path $RepoRoot ".opencode\skills"
-        Copy-SkillsDirectory -Target $target -Parent (Join-Path $RepoRoot ".opencode")
-        Write-Host "  .opencode\skills -> skills\" -ForegroundColor Green
-        Write-Host "  OpenCode uses AGENTS.md natively" -ForegroundColor Green
+        Copy-SkillsDirectory -Target (Join-Path $RepoRoot ".opencode\skills") -Parent (Join-Path $RepoRoot ".opencode")
+        Write-Host "     ✅ OpenCode uses AGENTS.md natively" -ForegroundColor Green
     }
 }
 
 function Setup-Gemini {
+    Write-Host "   🔴 Gemini CLI" -ForegroundColor Red
     if ($Global) {
-        $target = Join-Path $HomeDir ".gemini\skills"
-        Copy-SkillsDirectory -Target $target -Parent (Join-Path $HomeDir ".gemini")
-        Write-Host "  ~\.gemini\skills -> $SkillsSource" -ForegroundColor Green
-
+        Copy-SkillsDirectory -Target (Join-Path $HomeDir ".gemini\skills") -Parent (Join-Path $HomeDir ".gemini")
         $agentsMd = Join-Path $RepoRoot "AGENTS.md"
         if (Test-Path $agentsMd) {
             Copy-Item -Path $agentsMd -Destination (Join-Path $HomeDir "GEMINI.md") -Force
-            Write-Host "  AGENTS.md -> ~\GEMINI.md" -ForegroundColor Green
+            Write-Host "     📝 Copied AGENTS.md → ~\GEMINI.md" -ForegroundColor Green -NoNewline; Write-Host ""
         }
     } else {
-        $target = Join-Path $RepoRoot ".gemini\skills"
-        Copy-SkillsDirectory -Target $target -Parent (Join-Path $RepoRoot ".gemini")
-        Write-Host "  .gemini\skills -> skills\" -ForegroundColor Green
-        Copy-AgentsMd -TargetName "GEMINI.md" -SearchRoot $RepoRoot
+        Copy-SkillsDirectory -Target (Join-Path $RepoRoot ".gemini\skills") -Parent (Join-Path $RepoRoot ".gemini")
+        $agentsMd = Join-Path $RepoRoot "AGENTS.md"
+        if (Test-Path $agentsMd) {
+            Copy-Item -Path $agentsMd -Destination (Join-Path $RepoRoot "GEMINI.md") -Force
+            Write-Host "     📝 Copied AGENTS.md → GEMINI.md" -ForegroundColor Green -NoNewline; Write-Host ""
+        }
     }
 }
 
 function Setup-Copilot {
+    Write-Host "   🟠 GitHub Copilot" -ForegroundColor Yellow
     if ($Global) {
-        Write-Host "  ! GitHub Copilot setup is project-only. Skipping global." -ForegroundColor Yellow
+        Write-Host "     ⚠️  Project-only. Skipped globally." -ForegroundColor Yellow
         return
     }
-
     $agentsMd = Join-Path $RepoRoot "AGENTS.md"
     if (Test-Path $agentsMd) {
         $githubDir = Join-Path $RepoRoot ".github"
         New-Item -ItemType Directory -Path $githubDir -Force | Out-Null
         Copy-Item -Path $agentsMd -Destination (Join-Path $githubDir "copilot-instructions.md") -Force
-        Write-Host "  AGENTS.md -> .github\copilot-instructions.md" -ForegroundColor Green
+        Write-Host "     📝 Copied AGENTS.md → .github\copilot-instructions.md" -ForegroundColor Green -NoNewline; Write-Host ""
     } else {
-        Write-Host "  ! No root AGENTS.md found for Copilot" -ForegroundColor Yellow
+        Write-Host "     ⚠️  No root AGENTS.md found" -ForegroundColor Yellow
     }
 }
 
-# =============================================================================
-# PARSE ARGUMENTS
-# =============================================================================
+# ─── Main ────────────────────────────────────────────────────────────
 
 if ($Help) {
     Show-Help
@@ -263,35 +221,26 @@ if ($All) {
     $SETUP_COPILOT = $true
 }
 
-# =============================================================================
-# MAIN
-# =============================================================================
+Write-Banner
 
-$scopeLabel = if ($Global) { "global" } else { "project" }
-
-Write-Host ""
-Write-Host "AI Skills Setup — $ProjectName ($scopeLabel)" -ForegroundColor White
-Write-Host "========================================"
-Write-Host ""
-
-$skillCount = (Get-ChildItem -Path $SkillsSource -Filter "SKILL.md" -Recurse | Where-Object { $_.DirectoryName -ne $SkillsSource }).Count
+$skillFiles = Get-ChildItem -Path $SkillsSource -Filter "SKILL.md" -Recurse | Where-Object { $_.DirectoryName -ne $SkillsSource }
+$skillCount = $skillFiles.Count
 
 if ($skillCount -eq 0) {
-    Write-Host "No skills found in $SkillsSource" -ForegroundColor Red
+    Write-Host "❌ No skills found in $SkillsSource" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "Found $skillCount skills to configure" -ForegroundColor Blue
+Write-Host "   Found $skillCount skills to configure" -ForegroundColor DarkGray
 Write-Host ""
 
-# Interactive mode if no flags provided
 if (-not ($SETUP_CLAUDE -or $SETUP_CURSOR -or $SETUP_OPENCODE -or $SETUP_GEMINI -or $SETUP_COPILOT)) {
     Show-Menu
     Write-Host ""
 }
 
 if (-not ($SETUP_CLAUDE -or $SETUP_CURSOR -or $SETUP_OPENCODE -or $SETUP_GEMINI -or $SETUP_COPILOT)) {
-    Write-Host "No AI assistants selected. Nothing to do." -ForegroundColor Yellow
+    Write-Host "⚠️  No AI assistants selected. Nothing to do." -ForegroundColor Yellow
     exit 0
 }
 
@@ -304,89 +253,85 @@ if ($SETUP_GEMINI) { $total++ }
 if ($SETUP_COPILOT) { $total++ }
 
 if ($SETUP_CLAUDE) {
-    Write-Host "[$step/$total] Setting up Claude Code..." -ForegroundColor Yellow
+    Write-Host "   ── Step $step/$total ──" -ForegroundColor Cyan
     Setup-Claude
-    Write-Host ""
     $step++
 }
-
 if ($SETUP_CURSOR) {
-    Write-Host "[$step/$total] Setting up Cursor..." -ForegroundColor Yellow
+    Write-Host "   ── Step $step/$total ──" -ForegroundColor Cyan
     Setup-Cursor
-    Write-Host ""
     $step++
 }
-
 if ($SETUP_OPENCODE) {
-    Write-Host "[$step/$total] Setting up OpenCode..." -ForegroundColor Yellow
+    Write-Host "   ── Step $step/$total ──" -ForegroundColor Cyan
     Setup-OpenCode
-    Write-Host ""
     $step++
 }
-
 if ($SETUP_GEMINI) {
-    Write-Host "[$step/$total] Setting up Gemini CLI..." -ForegroundColor Yellow
+    Write-Host "   ── Step $step/$total ──" -ForegroundColor Cyan
     Setup-Gemini
-    Write-Host ""
     $step++
 }
-
 if ($SETUP_COPILOT) {
-    Write-Host "[$step/$total] Setting up GitHub Copilot..." -ForegroundColor Yellow
+    Write-Host "   ── Step $step/$total ──" -ForegroundColor Cyan
     Setup-Copilot
-    Write-Host ""
 }
 
-# =============================================================================
-# SUMMARY
-# =============================================================================
+# ─── Summary ─────────────────────────────────────────────
 
-Write-Host "Done! Configured $skillCount AI skills." -ForegroundColor Green
 Write-Host ""
-Write-Host "Installation report ($scopeLabel):"
+Write-Box -Icon "🎉" -Text "Installation Complete — $skillCount skills configured" -Color "Green"
+Write-Host ""
+
+$scopeLabel = if ($Global) { "global" } else { "project" }
+Write-Host "   Installed locations ($scopeLabel):" -ForegroundColor DarkGray
 Write-Host ""
 
 if ($Global) {
     if ($SETUP_CLAUDE) {
-        Write-Host "  Claude Code    $(Resolve-Path (Join-Path $HomeDir '.claude\skills') -ErrorAction SilentlyContinue)"
-        Write-Host "                 $(Join-Path $HomeDir 'CLAUDE.md')"
+        Write-Host "   🟣 Claude Code    $(Join-Path $HomeDir '.claude\skills')" -ForegroundColor DarkGray
+        Write-Host "                    $(Join-Path $HomeDir 'CLAUDE.md')" -ForegroundColor DarkGray
     }
     if ($SETUP_CURSOR) {
-        Write-Host "  Cursor         $(Resolve-Path (Join-Path $HomeDir '.cursor\skills') -ErrorAction SilentlyContinue)"
-        Write-Host "                 $(Join-Path $HomeDir '.cursorrules')"
+        Write-Host "   ⚫ Cursor         $(Join-Path $HomeDir '.cursor\skills')" -ForegroundColor DarkGray
+        Write-Host "                    $(Join-Path $HomeDir '.cursorrules')" -ForegroundColor DarkGray
     }
     if ($SETUP_OPENCODE) {
-        Write-Host "  OpenCode       $(Resolve-Path (Join-Path $HomeDir '.opencode\skills') -ErrorAction SilentlyContinue)"
+        Write-Host "   🔵 OpenCode       $(Join-Path $HomeDir '.opencode\skills')" -ForegroundColor DarkGray
     }
     if ($SETUP_GEMINI) {
-        Write-Host "  Gemini CLI     $(Resolve-Path (Join-Path $HomeDir '.gemini\skills') -ErrorAction SilentlyContinue)"
-        Write-Host "                 $(Join-Path $HomeDir 'GEMINI.md')"
+        Write-Host "   🔴 Gemini CLI     $(Join-Path $HomeDir '.gemini\skills')" -ForegroundColor DarkGray
+        Write-Host "                    $(Join-Path $HomeDir 'GEMINI.md')" -ForegroundColor DarkGray
     }
     if ($SETUP_COPILOT) {
-        Write-Host "  GitHub Copilot project-only (skipped globally)"
+        Write-Host "   🟠 GitHub Copilot project-only (skipped globally)" -ForegroundColor Yellow
     }
 } else {
     if ($SETUP_CLAUDE) {
-        Write-Host "  Claude Code    $(Join-Path $RepoRoot '.claude\skills')"
-        Write-Host "                 $(Join-Path $RepoRoot 'CLAUDE.md')"
+        Write-Host "   🟣 Claude Code    $(Join-Path $RepoRoot '.claude\skills')" -ForegroundColor DarkGray
+        Write-Host "                    $(Join-Path $RepoRoot 'CLAUDE.md')" -ForegroundColor DarkGray
     }
     if ($SETUP_CURSOR) {
-        Write-Host "  Cursor         $(Join-Path $RepoRoot '.cursor\skills')"
-        Write-Host "                 $(Join-Path $RepoRoot '.cursorrules')"
+        Write-Host "   ⚫ Cursor         $(Join-Path $RepoRoot '.cursor\skills')" -ForegroundColor DarkGray
+        Write-Host "                    $(Join-Path $RepoRoot '.cursorrules')" -ForegroundColor DarkGray
     }
     if ($SETUP_OPENCODE) {
-        Write-Host "  OpenCode       $(Join-Path $RepoRoot '.opencode\skills')"
-        Write-Host "                 $(Join-Path $RepoRoot 'AGENTS.md') (native)"
+        Write-Host "   🔵 OpenCode       $(Join-Path $RepoRoot '.opencode\skills')" -ForegroundColor DarkGray
+        Write-Host "                    $(Join-Path $RepoRoot 'AGENTS.md') (native)" -ForegroundColor DarkGray
     }
     if ($SETUP_GEMINI) {
-        Write-Host "  Gemini CLI     $(Join-Path $RepoRoot '.gemini\skills')"
-        Write-Host "                 $(Join-Path $RepoRoot 'GEMINI.md')"
+        Write-Host "   🔴 Gemini CLI     $(Join-Path $RepoRoot '.gemini\skills')" -ForegroundColor DarkGray
+        Write-Host "                    $(Join-Path $RepoRoot 'GEMINI.md')" -ForegroundColor DarkGray
     }
     if ($SETUP_COPILOT) {
-        Write-Host "  GitHub Copilot $(Join-Path $RepoRoot '.github\copilot-instructions.md')"
+        Write-Host "   🟠 GitHub Copilot $(Join-Path $RepoRoot '.github\copilot-instructions.md')" -ForegroundColor DarkGray
     }
 }
 
 Write-Host ""
-Write-Host "Note: Restart your AI assistant to load the skills." -ForegroundColor Blue
-Write-Host "      AGENTS.md is the source of truth — edit it, then re-run this script." -ForegroundColor Blue
+Write-Host "┌────────────────────────────────────────────────────────────┐" -ForegroundColor Cyan
+Write-Host "│  💡 Next step: Restart your AI assistant to load skills    │" -ForegroundColor Cyan
+Write-Host "│  📝 Pro tip:   AGENTS.md is the source of truth — edit it  │" -ForegroundColor Cyan
+Write-Host "│                then re-run this script to sync changes     │" -ForegroundColor Cyan
+Write-Host "└────────────────────────────────────────────────────────────┘" -ForegroundColor Cyan
+Write-Host ""
